@@ -1,0 +1,6 @@
+#zookeeper vars
+zoo_port1: 2888
+zoo_port2: 3888
+zoo_data_dir: /data/zookeeperData
+zoo_listen_port: 2181
+zookeeper_file: apache-zookeeper-3.7.0-bin.tar.gz

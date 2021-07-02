@@ -1,0 +1,13 @@
+---
+
+- hosts: zoo_hosts
+  roles:
+  - role: zookeeper
+  tags:
+  - install
+
+- hosts: zoo_hosts
+  roles:
+  - role: zookeeper
+  tags:
+  - uninstall

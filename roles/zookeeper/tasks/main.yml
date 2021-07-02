@@ -1,0 +1,58 @@
+---
+- name: Check Idle port for zookeeper
+  shell: ss -ntl|grep -e {{ zoo_listen_port }} -e {{ zoo_port2 }}
+  ignore_errors: True
+  register: zoo_port
+
+- name: WARN for port check
+  debug:
+    msg: "WARNING：Port {{ zoo_listen_port }} or {{ zoo_port2 }} is not idle, Service zookeeper will not be deploy"
+  when: zoo_port == "0"
+
+- name: Copy zookeeper pkgs to all hosts
+  copy:
+    src: "{{ zookeeper_file }}"
+    dest: /tmp/{{ zookeeper_file }}
+    mode: 0755
+  when: zoo_port != "0"
+
+- name: Unzip zookeeper pkgs in all hosts
+  unarchive:
+    src: /tmp/{{ zookeeper_file }}
+    dest: /usr/local
+    remote_src: yes
+    mode: 0755
+  when: zoo_port != "0"
+
+- name: Register var zookeeper_path
+  shell: echo {{ zookeeper_file }}|awk -F'.tar.gz' '{print $1}'
+  register: zookeeper_path
+  when: zoo_port != "0"
+
+- name: Create symbolic link
+  file:
+   src: /usr/local/{{ zookeeper_path.stdout }}
+   dest: /usr/local/zookeeper
+   state: link
+
+- name: Create a data_dir
+  file:
+    path: "{{ zoo_data_dir }}"
+    state: directory
+    mode: 0755
+  when: zoo_port != "0"
+
+- name: Config zookeeper myid
+  template:
+    src: myid.j2
+    dest: "{{ zoo_data_dir }}/myid"
+    mode: 0755
+  when: zoo_port != "0"
+
+- name: Config zookeeper service
+  template:
+    src: zoo.cfg.j2
+    dest: /usr/local/zookeeper/conf/zoo.cfg
+    mode: 0755
+  notify: start zookeeper
+  when: zoo_port != "0"
